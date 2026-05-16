@@ -39,7 +39,7 @@
          * [Power State Control](#power-state-control)
          * [Check Power State](#check-power-state)
          * [Get Power Consumed](#get-power-consumed)
-         * [Resetting iDRAC](#resetting-idrac)
+         * [Resetting Dell iDRAC](#resetting-dell-idrac)
          * [Resetting BMC](#resetting-bmc)
          * [BIOS factory reset](#bios-factory-reset)
          * [Check current boot order](#check-current-boot-order)
@@ -104,14 +104,14 @@ We're mostly concentrated on programmatically enforcing interface/device boot or
 * Check current boot order
 * Display current power consumption in watts
 * Reboot host
-* Reset iDRAC
-* View, check and clear iDRAC jobs
+* Reset Dell iDRAC
+* View, check and clear Dell iDRAC jobs
 * Revert to factory settings
 * Check/set SRIOV
 * Take a remote screenshot of server KVM console activity (Dell only).
 * Support tokenized authentication
 * Check and set BIOS attributes (e.g. setting UEFI or BIOS mode)
-* Get firmware inventory of installed devices supported by iDRAC
+* Get firmware inventory of installed devices supported by the BMC
 * Check/ummount virtual media en-masse across a set of systems (SuperMicro only)
 * Obtain limited hardware information (CPU, Memory, Interfaces)
 * Bulk actions via plain text file with list of hosts for parallel execution
@@ -122,7 +122,7 @@ We're mostly concentrated on programmatically enforcing interface/device boot or
 * (Dell) iDRAC7,8,9 or newer
 * (Dell) Firmware version ```2.60.60.60``` or higher
 * Any Redfish IPMI 2.0 support on non-Dell systems
-* iDRAC administrative account
+* BMC administrative account
 * Python >= ```3.8``` or [podman](https://podman.io/getting-started/installation) as a container.
 * python3-devel >= ```3.8``` (If using standalone or RPM package below).
 
@@ -326,7 +326,7 @@ badfish -H mgmt-your-server.example.com --boot-to-mac A9:BB:4B:50:CA:54
 ```
 
 ### Forcing a one time boot to a specific type
-To force systems to perform a one-time boot to a specific type on the next subsequent reboot you can use the ```--boot-to-type``` option and pass as an argument the device type, as defined on the iDRAC interfaces yaml, that you want the one-time boot to be set to. For this action you must also include the path to your interfaces yaml. This will change the one time boot BIOS attributes OneTimeBootMode and OneTimeBootSeqDev and on the next reboot it will attempt to PXE boot or boot from the first interface defined for that host type on the interfaces yaml file.
+To force systems to perform a one-time boot to a specific type on the next subsequent reboot you can use the ```--boot-to-type``` option and pass as an argument the device type, as defined on the interfaces yaml, that you want the one-time boot to be set to. For this action you must also include the path to your interfaces yaml. This will change the one time boot BIOS attributes OneTimeBootMode and OneTimeBootSeqDev and on the next reboot it will attempt to PXE boot or boot from the first interface defined for that host type on the interfaces yaml file.
 ```bash
 badfish -H mgmt-your-server.example.com  -i config/idrac_interfaces.yml --boot-to-type foreman
 ```
@@ -379,7 +379,7 @@ Partial Output:
 - INFO     - Current watts consumed: 213
 ```
 
-### Resetting iDRAC
+### Resetting Dell iDRAC
 For the replacement of `racadm racreset`, the optional argument `--racreset` was added. When this argument is passed to ```badfish```, a graceful restart is triggered on the iDRAC itself.
 ```bash
 badfish -H mgmt-your-server.example.com --racreset
@@ -408,7 +408,7 @@ badfish -H mgmt-your-server.example.com --factory-reset
 ```
 
 ### Check current boot order
-To check the current boot order of a specific host you can use the ```--check-boot``` option which will return an ordered list of boot devices. Additionally you can pass the ```-i``` option which will in turn print on screen what type of host does the current boot order match as those defined on the iDRAC interfaces yaml.
+To check the current boot order of a specific host you can use the ```--check-boot``` option which will return an ordered list of boot devices. Additionally you can pass the ```-i``` option which will in turn print on screen what type of host does the current boot order match as those defined on the interfaces yaml.
 ```bash
 badfish -H mgmt-your-server.example.com  -i config/idrac_interfaces.yml --check-boot
 ```
@@ -426,7 +426,7 @@ badfish -H mgmt-your-server.example.com  -i config/idrac_interfaces.yml -t forem
 ```
 
 ### Firmware inventory
-If you would like to get a detailed list of all the devices supported by iDRAC you can run ```badfish``` with the ```--firware-inventory``` option which will return a list of devices with additional device info.
+If you would like to get a detailed list of all the devices supported by the BMC you can run ```badfish``` with the ```--firware-inventory``` option which will return a list of devices with additional device info.
 ```bash
 badfish -H mgmt-your-server.example.com --firmware-inventory
 ```
@@ -438,7 +438,7 @@ badfish -H mgmt-your-server.example.com --firmware-inventory --delta mgmt-your-o
 ```
 
 ### Clear Job Queue
-If you would like to clear all the jobs that are queued on the remote iDRAC you can run ```badfish``` with the ```--clear-jobs``` option which query for all active jobs in the iDRAC queue and will post a request to clear the queue.
+If you would like to clear all the jobs that are queued on the remote BMC you can run ```badfish``` with the ```--clear-jobs``` option which query for all active jobs in the job queue and will post a request to clear the queue.
 ```bash
 badfish -H mgmt-your-server.example.com --clear-jobs
 ```
@@ -450,7 +450,7 @@ badfish -H mgmt-your-server.example.com --clear-jobs --force
 ```
 
 ### List Job Queue
-If you would like to list all active jobs that are queued on the remote iDRAC you can run ```badfish``` with the ```--ls-jobs``` option which query for all active jobs in the iDRAC queue and will return a list with all active items.
+If you would like to list all active jobs that are queued on the remote BMC you can run ```badfish``` with the ```--ls-jobs``` option which query for all active jobs in the job queue and will return a list with all active items.
 ```bash
 badfish -H mgmt-your-server.example.com --ls-jobs
 ```
