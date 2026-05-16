@@ -71,8 +71,16 @@ def create_parser():
         help="Get current consumed watts on host(s)",
         action="store_true",
     )
-    parser.add_argument("--racreset", help="(Dell iDRAC) Flag for Dell iDRAC reset", action="store_true")
-    parser.add_argument("--wait", help="(Dell iDRAC) Wait for Dell iDRAC to be responsive after reset", action="store_true")
+    parser.add_argument(
+        "--racreset",
+        help="(Dell iDRAC) Flag for Dell iDRAC reset",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--wait",
+        help="(Dell iDRAC) Wait for Dell iDRAC to be responsive after reset",
+        action="store_true",
+    )
     parser.add_argument("--bmc-reset", help="Flag for BMC reset", action="store_true")
     parser.add_argument(
         "--factory-reset",
@@ -247,7 +255,8 @@ def create_parser():
     )
     parser.add_argument(
         "--get-scp-targets",
-        help="(Dell iDRAC) Get allowable target values to export or import with Dell iDRAC SCP. Choices=['Export', 'Import']",
+        help="(Dell iDRAC) Get allowable target values to export or import with iDRAC SCP."
+        " Choices=['Export', 'Import']",
         choices=["Export", "Import"],
         default="",
     )
@@ -268,8 +277,8 @@ def create_parser():
     )
     parser.add_argument(
         "--import-scp",
-        help="(Dell iDRAC) Import system config using Dell iDRAC SCP, argument specifies which JSON file contains config that should be "
-        "imported.",
+        help="(Dell iDRAC) Import system config using iDRAC SCP, argument specifies which JSON file"
+        " contains config that should be imported.",
         default="",
     )
     parser.add_argument(
