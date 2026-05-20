@@ -1125,7 +1125,9 @@ class Badfish:
 
     async def reset_idrac(self, wait=False):
         if self.vendor != "Dell":
-            self.logger.warning("Vendor isn't a Dell, if you are trying this on a Supermicro or HPE, use --bmc-reset instead.")
+            self.logger.warning(
+                "Vendor isn't a Dell, if you are trying this on a Supermicro or HPE, use --bmc-reset instead."
+            )
             return False
         self.logger.debug("Running reset iDRAC.")
         _reset_types = await self.get_reset_types(manager=True)
@@ -1163,7 +1165,9 @@ class Badfish:
 
     async def reset_bmc(self):
         if self.vendor not in ("Supermicro", "HPE"):
-            self.logger.warning("Vendor isn't a Supermicro or HPE, if you are trying this on a Dell, use --racreset instead.")
+            self.logger.warning(
+                "Vendor isn't a Supermicro or HPE, if you are trying this on a Dell, use --racreset instead."
+            )
             return False
         self.logger.debug("Running reset BMC.")
         _reset_types = await self.get_reset_types(manager=True, bmc=True)
