@@ -1,6 +1,37 @@
 # CHANGELOG
 
 
+## v1.6.0 (2026-05-20)
+
+### Bug Fixes
+
+- Apply black formatting to main.py and test_vendor_detection.py
+  ([`dc53480`](https://github.com/quadsproject/badfish/commit/dc534804f07d4f37f431276bfb542d7a5e77fdea))
+
+- Clarify vendor-specific vs generic terminology in CLI help and docs
+  ([`c0573d7`](https://github.com/quadsproject/badfish/commit/c0573d7094c8e601e9f4f1f06708662846f61fc7))
+
+fixes https://github.com/quadsproject/badfish/issues/497
+
+### Chores
+
+- Black formatting
+  ([`fcfcc85`](https://github.com/quadsproject/badfish/commit/fcfcc85d31d0925b259272eefbf1db5a07db1aac))
+
+- Bump codecov python to supported 3.12
+  ([`19d51fa`](https://github.com/quadsproject/badfish/commit/19d51fa75f6e150b3a3f7d21c1dce1150af9fd61))
+
+### Features
+
+- Add --timeout argument for configurable REST call timeout
+  ([`f2ef943`](https://github.com/quadsproject/badfish/commit/f2ef9437861c5f693c117b80268558a5620a6e48))
+
+resolved https://github.com/quadsproject/badfish/issues/412
+
+- Add multi-vendor detection
+  ([`ca03fd5`](https://github.com/quadsproject/badfish/commit/ca03fd5e08eca62164418a23ea9bb0c7d2d4cd80))
+
+
 ## v1.5.0 (2026-05-05)
 
 ### Bug Fixes
