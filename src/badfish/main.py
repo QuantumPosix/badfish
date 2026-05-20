@@ -18,6 +18,7 @@ from io import StringIO
 from rich.console import Console
 from rich.table import Table
 
+from badfish.config import TIMEOUT
 from badfish.helpers import get_now
 from badfish.helpers.parser import parse_arguments
 from badfish.helpers.logger import BadfishLogger
@@ -46,6 +47,7 @@ async def badfish_factory(
     _insecure=False,
     _console=None,
     _progress_disabled=False,
+    _timeout=TIMEOUT,
 ):
     if not _logger:
         bfl = BadfishLogger()
@@ -61,6 +63,7 @@ async def badfish_factory(
         _insecure,
         _console,
         _progress_disabled,
+        _timeout,
     )
     await badfish.init()
     return badfish
@@ -78,6 +81,7 @@ class Badfish:
         _insecure=False,
         _console=None,
         _progress_disabled=False,
+        _timeout=TIMEOUT,
     ):
         self.host = _host
         self.username = _username
@@ -91,7 +95,7 @@ class Badfish:
         self.loop = _loop
         if not self.loop:
             self.loop = asyncio.get_event_loop()
-        self.http_client = HTTPClient(_host, _username, _password, _logger, _retries, _insecure)
+        self.http_client = HTTPClient(_host, _username, _password, _logger, _retries, _insecure, _timeout)
         self.system_resource = None
         self.manager_resource = None
         self.bios_uri = None
@@ -529,7 +533,15 @@ class Badfish:
 
         raw = await response.text("utf-8", "ignore")
         data = json.loads(raw.strip())
-        self.vendor = "Dell" if data.get("Oem") and "Dell" in data["Oem"] else "Supermicro"
+        oem = data.get("Oem") or {}
+        if "Dell" in oem:
+            self.vendor = "Dell"
+        elif "Supermicro" in oem:
+            self.vendor = "Supermicro"
+        elif "Hpe" in oem:
+            self.vendor = "HPE"
+        else:
+            self.vendor = "Unknown"
 
         if "Managers" not in data:
             raise BadfishException("Managers resource not found")
@@ -1117,7 +1129,9 @@ class Badfish:
 
     async def reset_idrac(self, wait=False):
         if self.vendor != "Dell":
-            self.logger.warning("Vendor isn't a Dell, if you are trying this on a Supermicro, use --bmc-reset instead.")
+            self.logger.warning(
+                "Vendor isn't a Dell, if you are trying this on a Supermicro or HPE, use --bmc-reset instead."
+            )
             return False
         self.logger.debug("Running reset iDRAC.")
         _reset_types = await self.get_reset_types(manager=True)
@@ -1154,8 +1168,10 @@ class Badfish:
             return True
 
     async def reset_bmc(self):
-        if self.vendor != "Supermicro":
-            self.logger.warning("Vendor isn't a Supermicro, if you are trying this on a Dell, use --racreset instead.")
+        if self.vendor not in ("Supermicro", "HPE"):
+            self.logger.warning(
+                "Vendor isn't a Supermicro or HPE, if you are trying this on a Dell, use --racreset instead."
+            )
             return False
         self.logger.debug("Running reset BMC.")
         _reset_types = await self.get_reset_types(manager=True, bmc=True)
@@ -1630,7 +1646,7 @@ class Badfish:
 
         _uri = "%s%s" % (self.host_uri, self.system_resource)
         _headers = {"Content-Type": "application/json"}
-        if self.vendor == "Supermicro":
+        if self.vendor in ("Supermicro", "HPE"):
             _payload = {"Boot": {"BootSourceOverrideEnabled": "Once"}}
 
             _response = await self.get_request(_uri)
@@ -2933,6 +2949,7 @@ async def execute_badfish(_host, _args, logger, format_handler=None, console=Non
     old_password = _args["old_password"]
     screenshot = _args["screenshot"]
     retries = int(_args["retries"])
+    timeout = int(_args.get("timeout", TIMEOUT))
     output = _args["output"]
     get_scp_targets = _args["get_scp_targets"]
     scp_targets = _args["scp_targets"]
@@ -2956,6 +2973,7 @@ async def execute_badfish(_host, _args, logger, format_handler=None, console=Non
             _insecure=insecure,
             _console=console,
             _progress_disabled=progress_disabled,
+            _timeout=timeout,
         )
 
         if _args["host_list"] and not _args["output"]:

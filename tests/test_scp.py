@@ -31,12 +31,15 @@ from tests.config import (
 from tests.test_base import TestBase
 
 
+FIXED_BASE_TIME = datetime(2024, 6, 15, 10, 30, 0)
+
+
 def fixed_datetime():
     fixed_datetime.counter = getattr(fixed_datetime, "counter", 0) + 1
     if fixed_datetime.counter < 5:
-        return datetime.now()
+        return FIXED_BASE_TIME
     else:
-        return datetime.now() + timedelta(minutes=15)
+        return FIXED_BASE_TIME + timedelta(minutes=15)
 
 
 def export_dir_check():
@@ -114,11 +117,13 @@ class TestExportSCP(TestBase):
     tests_dir = os.path.dirname(__file__)
     example_path = os.path.join(tests_dir, "fixtures/example_scp.json")
 
-    @patch("badfish.helpers.get_now", fixed_datetime)
+    @patch("badfish.main.get_now", fixed_datetime)
     @patch("aiohttp.ClientSession.delete")
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.ClientSession.get")
     def test_pass(self, mock_get, mock_post, mock_delete):
+        if hasattr(fixed_datetime, "counter"):
+            setattr(fixed_datetime, "counter", 0)
         export_dir_check()
         scp_file = open(self.example_path, "r").read()
         # Wait-then-fetch approach: wait 45 seconds, then fetch from Jobs, fallback to Tasks

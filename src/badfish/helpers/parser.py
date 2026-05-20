@@ -1,7 +1,17 @@
 import argparse
 
 from badfish import __version__
-from badfish.config import RETRIES
+from badfish.config import RETRIES, TIMEOUT
+
+
+def _positive_int(value):
+    try:
+        ivalue = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{value!r} is not an integer")
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError(f"{value} must be a positive integer")
+    return ivalue
 
 
 def create_parser():
@@ -11,11 +21,11 @@ def create_parser():
         allow_abbrev=False,
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
-    parser.add_argument("-H", "--host", help="iDRAC host address")
-    parser.add_argument("-u", help="iDRAC username")
-    parser.add_argument("-p", help="iDRAC password")
-    parser.add_argument("-i", help="Path to iDRAC interfaces yaml", default=None)
-    parser.add_argument("-t", help="Type of host as defined on iDRAC interfaces yaml")
+    parser.add_argument("-H", "--host", help="BMC host address")
+    parser.add_argument("-u", help="BMC username")
+    parser.add_argument("-p", help="BMC password")
+    parser.add_argument("-i", help="Path to interfaces yaml", default=None)
+    parser.add_argument("-t", help="Type of host as defined on interfaces yaml")
     parser.add_argument("-l", "--log", help="Optional argument for logging results to a file")
     parser.add_argument(
         "-o",
@@ -39,7 +49,7 @@ def create_parser():
     parser.add_argument("--boot-to", help="Set next boot to one-shot boot to a specific device")
     parser.add_argument(
         "--boot-to-type",
-        help="Set next boot to one-shot boot to a specific type as defined on iDRAC interfaces yaml",
+        help="Set next boot to one-shot boot to a specific type as defined on interfaces yaml",
     )
     parser.add_argument(
         "--boot-to-mac",
@@ -71,8 +81,16 @@ def create_parser():
         help="Get current consumed watts on host(s)",
         action="store_true",
     )
-    parser.add_argument("--racreset", help="Flag for iDRAC reset", action="store_true")
-    parser.add_argument("--wait", help="Wait for iDRAC to be responsive after reset", action="store_true")
+    parser.add_argument(
+        "--racreset",
+        help="(Dell iDRAC) Flag for Dell iDRAC reset",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--wait",
+        help="(Dell iDRAC) Wait for Dell iDRAC to be responsive after reset",
+        action="store_true",
+    )
     parser.add_argument("--bmc-reset", help="Flag for BMC reset", action="store_true")
     parser.add_argument(
         "--factory-reset",
@@ -241,35 +259,42 @@ def create_parser():
         default=RETRIES,
     )
     parser.add_argument(
+        "--timeout",
+        help="Timeout in seconds for each REST API call (must be > 0).",
+        default=TIMEOUT,
+        type=_positive_int,
+    )
+    parser.add_argument(
         "--insecure",
         help="Disable SSL/TLS certificate verification (insecure, use only for testing)",
         action="store_true",
     )
     parser.add_argument(
         "--get-scp-targets",
-        help="Get allowable target values to export or import with iDRAC SCP. Choices=['Export', 'Import']",
+        help="(Dell iDRAC) Get allowable target values to export or import with iDRAC SCP."
+        " Choices=['Export', 'Import']",
         choices=["Export", "Import"],
         default="",
     )
     parser.add_argument(
         "--scp-targets",
-        help="Comma separated targets which configs should be exported with iDRAC SCP.",
+        help="(Dell iDRAC) Comma separated targets which configs should be exported with Dell iDRAC SCP.",
         default="ALL",
     )
     parser.add_argument(
         "--scp-include-read-only",
-        help="Flag for including read only attributes in SCP export.",
+        help="(Dell iDRAC) Flag for including read only attributes in Dell iDRAC SCP export.",
         action="store_true",
     )
     parser.add_argument(
         "--export-scp",
-        help="Export system config using iDRAC SCP, argument specifies where file should be saved.",
+        help="(Dell iDRAC) Export system config using Dell iDRAC SCP, argument specifies where file should be saved.",
         default="",
     )
     parser.add_argument(
         "--import-scp",
-        help="Import system config using iDRAC SCP, argument specifies which JSON file contains config that should be "
-        "imported.",
+        help="(Dell iDRAC) Import system config using iDRAC SCP, argument specifies which JSON file"
+        " contains config that should be imported.",
         default="",
     )
     parser.add_argument(
