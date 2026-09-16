@@ -141,7 +141,7 @@ We're mostly concentrated on programmatically enforcing interface/device boot or
 * Any Redfish implementation on non-Dell systems
 * BMC administrative account
 * Python >= ```3.10``` or [podman](https://podman.io/getting-started/installation) as a container.
-* python3-devel for Python >= ```3.10``` (if using the standalone install or RPM package below).
+* python3-devel (only needed if pip has to compile a dependency from source; see the note under Badfish Standalone CLI)
 
 ## Setup
 ### Badfish RPM package
@@ -378,7 +378,7 @@ badfish -H mgmt-your-server.example.com  -i config/idrac_interfaces.yml --boot-t
 **Note** `--boot-to`, `--boot-to-type`, and `--boot-to-mac` require you to manually perform a reboot action, these simply just batch what the system will boot to on the next boot.  For this you can use either `--power-cycle` or `--reboot-only`.
 
 ### Forcing a one-time boot to PXE
-To force systems to perform a one-time boot to PXE, simply pass the `--pxe` flag to any of the commands above, by default it will pxe off the first available device for PXE booting.  This is equivalent to the ipmitool command `chassis bootdev pxe options=persistent` and should be used with Supermicro/HPE systems or non-Dell systems that support a minimal IPMI 2.0 specification.
+To force systems to perform a one-time boot to PXE, simply pass the `--pxe` flag to any of the commands above, by default it will pxe off the first available device for PXE booting.  This is equivalent to the ipmitool command `chassis bootdev pxe options=persistent` and should be used with Supermicro/HPE systems or non-Dell systems that support the Redfish boot source override.
 
 For Dell systems please use either  `--boot-to`, `--boot-to-mac` or `--boot-to-type` for temporary PXE to a specific interface or change the boot order permanently to achieve your desired effect.
 ```bash
@@ -807,7 +807,7 @@ Your usage may vary, this is what our configuration looks like via ```config/idr
 
 | Machine Type | Network Interface      |
 | ------------ | ----------------------:|
-| Dell FC640   |  NIC.Integrated.1-1-1  |
+| Dell fc640   |  NIC.Integrated.1-1-1  |
 | Dell r620	   |  NIC.Integrated.1-3-1  |
 | Dell r630    |  NIC.Slot.2-1-1        |
 | Dell r930    |  NIC.Integrated.1-3-1  |
