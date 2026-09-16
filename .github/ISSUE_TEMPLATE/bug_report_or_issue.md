@@ -11,7 +11,7 @@ assignees: ''
 
 * Python Version:
 * Operating System:
-* Target System Type: (_e.g. Dell, SuperMicro_)
+* Target System Type: (_e.g. Dell, Supermicro_)
 * IPMI / Out-of-band Firmware Version: (_e.g. iDRAC 8 2.60.60.60)
 
 **Describe the bug**
