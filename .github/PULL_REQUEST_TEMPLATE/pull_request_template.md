@@ -8,7 +8,7 @@
 ### New Feature Submissions:
 
 1. [ ] Does your submission pass tests?
-2. [ ] Have you lint your code locally before submission?
+2. [ ] Have you linted your code locally before submission?
 
 ### Changes to Core Features:
 
