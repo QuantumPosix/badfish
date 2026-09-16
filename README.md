@@ -102,9 +102,9 @@ Badfish is a Redfish-based API tool for managing bare-metal systems via the [Red
 You can read more [about badfish](https://quads.dev/about-badfish/) at the [QUADS](https://quads.dev/) website.
 
 ## Scope
-Right now Badfish is focused on managing Dell, SuperMicro and HPE systems, but can potentially work with any system that supports the Redfish API.  Functionality may vary depending on the vendor Redfish implementation with Dell systems having the most functionality.
+Right now Badfish is focused on managing Dell, Supermicro and HPE systems, but can potentially work with any system that supports the Redfish API.  Functionality may vary depending on the vendor Redfish implementation with Dell systems having the most functionality.
 
-We're mostly concentrated on programmatically enforcing interface/device boot order to accommodate [TripleO](https://docs.openstack.org/tripleo-docs/latest/) based [OpenStack](https://www.openstack.org/) and [OpenShift](https://www.openshift.com/) deployments while simultaneously allowing easy management and provisioning of those same systems via [The Foreman](https://theforeman.org/).  Badfish can be useful as a general standalone, unified vendor IPMI/OOB tool however as support for more vendors is added.
+We're mostly concentrated on programmatically enforcing interface/device boot order to accommodate [TripleO](https://docs.openstack.org/tripleo-docs/latest/) based [OpenStack](https://www.openstack.org/) and [OpenShift](https://www.openshift.com/) deployments while simultaneously allowing easy management and provisioning of those same systems via [The Foreman](https://theforeman.org/).  Badfish can be useful as a general standalone, unified vendor IPMI/OOB tool, with support for more vendors added over time.
 
 ## Features
 * Toggle and save a persistent interface/device boot order on remote system
@@ -138,10 +138,10 @@ We're mostly concentrated on programmatically enforcing interface/device boot or
 ## Requirements
 * (Dell) iDRAC7,8,9 or newer
 * (Dell) Firmware version ```2.60.60.60``` or higher
-* Any Redfish IPMI 2.0 support on non-Dell systems
+* Any Redfish implementation on non-Dell systems
 * BMC administrative account
 * Python >= ```3.10``` or [podman](https://podman.io/getting-started/installation) as a container.
-* python3-devel >= ```3.10``` (If using standalone or RPM package below).
+* python3-devel for Python >= ```3.10``` (if using the standalone install or RPM package below).
 
 ## Setup
 ### Badfish RPM package
@@ -265,10 +265,10 @@ BADFISH_USERNAME=my_username BADFISH_PASSWORD=my_password \
 > If you want to run any actions that would have output files like `--screenshot` you can map the container root volume to a directory on your local machine where you would like to have those files stored like `-v /tmp/screens:/badfish:Z`
 
 > [!IMPORTANT]
-> When mapping a volume to a container make sure to use the `:Z` suffix for appropiate labeling
+> When mapping a volume to a container make sure to use the `:Z` suffix for appropriate labeling
 
 ### Via Virtualenv
-[Virtualenv](https://docs.python.org/3/library/venv.html) is a wonderful tool to sandbox running Python applications or to separate Python versions of components from your main system libaries.  Unfortunately it can be problematic with running Badfish directly from the Git repo inside a virtualenv sandbox.
+[Virtualenv](https://docs.python.org/3/library/venv.html) is a wonderful tool to sandbox running Python applications or to separate Python versions of components from your main system libraries.  Unfortunately it can be problematic with running Badfish directly from the Git repo inside a virtualenv sandbox.
 
 While we strongly recommend using the [podman](#via-podman) method of calling Badfish inside a virtual environment you can still do it directly from the repository via virtualenv but you would need to prepend the call to Badfish with the setting of the `PYTHONPATH` environment variable pointing at the path of your Badfish repository.
 
@@ -378,7 +378,7 @@ badfish -H mgmt-your-server.example.com  -i config/idrac_interfaces.yml --boot-t
 **Note** `--boot-to`, `--boot-to-type`, and `--boot-to-mac` require you to manually perform a reboot action, these simply just batch what the system will boot to on the next boot.  For this you can use either `--power-cycle` or `--reboot-only`.
 
 ### Forcing a one-time boot to PXE
-To force systems to perform a one-time boot to PXE, simply pass the `--pxe` flag to any of the commands above, by default it will pxe off the first available device for PXE booting.  This is equivalent to the ipmitool command `chassis bootdev pxe options=persistent` and should be used with SuperMicro/HPE systems or non-Dell systems that support a minimal IPMI 2.0 specification.
+To force systems to perform a one-time boot to PXE, simply pass the `--pxe` flag to any of the commands above, by default it will pxe off the first available device for PXE booting.  This is equivalent to the ipmitool command `chassis bootdev pxe options=persistent` and should be used with Supermicro/HPE systems or non-Dell systems that support a minimal IPMI 2.0 specification.
 
 For Dell systems please use either  `--boot-to`, `--boot-to-mac` or `--boot-to-type` for temporary PXE to a specific interface or change the boot order permanently to achieve your desired effect.
 ```bash
@@ -414,7 +414,7 @@ Partial Output:
 ```
 
 ### Get Power Consumed
-This displays the current power usage for Dell / Supermicro server(s).
+This displays the current power usage of the server.
 ```bash
 badfish -H mgmt-your-server.example.com --get-power-consumed
 ```
@@ -428,7 +428,7 @@ For the replacement of `racadm racreset`, the optional argument `--racreset` was
 ```bash
 badfish -H mgmt-your-server.example.com --racreset
 ```
-* You can also specify `--racreset --wait` and Badfish will poll the iDrac for it to complete and keep you updated on progress. 
+* You can also specify `--racreset --wait` and Badfish will poll the iDRAC for it to complete and keep you updated on progress. 
 
 
 > [!NOTE]
@@ -464,7 +464,7 @@ badfish -H mgmt-your-server.example.com --toggle-boot-device NIC.Integrated.1-3-
 ```
 
 ### Variable number of retries
-At certain points during the execution of ```badfish``` the program might come across a non responsive resources and will automatically retry to establish connection. We have included a default value of 30 retries after failed attempts but this can be customized via the ```--retries``` optional argument which takes as input an integer with the number of desired retries.
+At certain points during the execution of ```badfish``` the program might come across non-responsive resources and will automatically retry to establish connection. We have included a default value of 30 retries after failed attempts but this can be customized via the ```--retries``` optional argument which takes as input an integer with the number of desired retries.
 ```bash
 badfish -H mgmt-your-server.example.com  -i config/idrac_interfaces.yml -t foreman --retries 20
 ```
@@ -494,7 +494,7 @@ badfish -H mgmt-your-server.example.com --firmware-inventory --delta mgmt-your-o
 ```
 
 ### Clear Job Queue
-If you would like to clear all the jobs that are queued on the remote BMC you can run ```badfish``` with the ```--clear-jobs``` option which query for all active jobs in the job queue and will post a request to clear the queue.
+If you would like to clear all the jobs that are queued on the remote BMC you can run ```badfish``` with the ```--clear-jobs``` option which queries for all active jobs in the job queue and posts a request to clear the queue.
 ```bash
 badfish -H mgmt-your-server.example.com --clear-jobs
 ```
@@ -506,13 +506,13 @@ badfish -H mgmt-your-server.example.com --clear-jobs --force
 ```
 
 ### List Job Queue
-If you would like to list all active jobs that are queued on the remote BMC you can run ```badfish``` with the ```--ls-jobs``` option which query for all active jobs in the job queue and will return a list with all active items.
+If you would like to list all active jobs that are queued on the remote BMC you can run ```badfish``` with the ```--ls-jobs``` option which queries for all active jobs in the job queue and returns a list with all active items.
 ```bash
 badfish -H mgmt-your-server.example.com --ls-jobs
 ```
 
 ### Check Job Status
-If you would like to the status of an existing LifeCycle controller job you can run ```badfish``` with the ```--check-job``` option and passing the job id which can be obtained via ```--ls-jobs```. This will return a detail of the specific job with status and percentage of completion.
+If you would like to check the status of an existing Lifecycle Controller job you can run ```badfish``` with the ```--check-job``` option and passing the job id which can be obtained via ```--ls-jobs```. This will return a detail of the specific job with status and percentage of completion.
 ```bash
 badfish -H mgmt-your-server.example.com --check-job JID_340568202796
 ```
@@ -560,19 +560,19 @@ badfish -H mgmt-your-server.example.com --ls-serial
 ```
 
 ### Check Virtual Media
-If you would like to check for any active virtual media you can run ```badfish``` with the ```--check-virtual-media``` option which query for all active virtual devices.
+If you would like to check for any active virtual media you can run ```badfish``` with the ```--check-virtual-media``` option which queries for all active virtual devices.
 ```bash
 badfish -H mgmt-your-server.example.com --check-virtual-media
 ```
 
 ### Mount Virtual Media
-If you would like to mount an ISO from network you can run ```badfish``` with the ```--mount-virtual-media``` option which post a request for mounting the ISO virtual media (Virtual CD). Full address to the ISO is needed as an argument.
+If you would like to mount an ISO from network you can run ```badfish``` with the ```--mount-virtual-media``` option which posts a request for mounting the ISO virtual media (Virtual CD). Full address to the ISO is needed as an argument.
 ```bash
 badfish -H mgmt-your-server.example.com --mount-virtual-media http://storage.example.com/folder/linux.iso
 ```
 
 ### Unmount Virtual Media
-If you would like to unmount all active virtual media you can run ```badfish``` with the ```--unmount-virtual-media``` option which post a request for unmounting all active virtual devices.
+If you would like to unmount all active virtual media you can run ```badfish``` with the ```--unmount-virtual-media``` option which posts a request for unmounting all active virtual devices.
 ```bash
 badfish -H mgmt-your-server.example.com --unmount-virtual-media
 ```
@@ -738,13 +738,13 @@ badfish -H mgmt-your-server.example.com --import-scp "./example_export.json" --s
 > This is only supported on Dell devices.
 
 ### Bulk actions via text file with list of hosts
-In the case you would like to execute a common badfish action on a list of hosts, you can pass the optional argument ```--host-list``` in place of ```-H``` with the path to a text file with the hosts you would like to action upon and any addtional arguments defining a common action for all these hosts.
+In the case you would like to execute a common badfish action on a list of hosts, you can pass the optional argument ```--host-list``` in place of ```-H``` with the path to a text file with the hosts you would like to action upon and any additional arguments defining a common action for all these hosts.
 ```bash
 badfish --host-list /tmp/bad-hosts --clear-jobs
 ```
 
 ### Verbose output
-If you would like to see a more detailed output on console you can use the ```--verbose``` option and get a additional debug logs.
+If you would like to see a more detailed output on console you can use the ```--verbose``` option and get additional debug logs.
 > [!NOTE]
 > `--log` uses the same log level: INFO by default, DEBUG with `--verbose`.
 ```bash
@@ -752,7 +752,7 @@ badfish -H mgmt-your-server.example.com  -i config/idrac_interfaces.yml -t forem
 ```
 
 ### Log to file
-If you would like to log the output of ```badfish``` you can use the ```--log``` option and pass the path to where you want ```badfish``` to log it's output to.
+If you would like to log the output of ```badfish``` you can use the ```--log``` option and pass the path to where you want ```badfish``` to log its output to.
 ```bash
 badfish -H mgmt-your-server.example.com  -i config/idrac_interfaces.yml -t foreman --log /tmp/bad.log
 ```
@@ -807,7 +807,7 @@ Your usage may vary, this is what our configuration looks like via ```config/idr
 
 | Machine Type | Network Interface      |
 | ------------ | ----------------------:|
-| Dell fc640   |  NIC.Integrated.1-1-1  |
+| Dell FC640   |  NIC.Integrated.1-1-1  |
 | Dell r620	   |  NIC.Integrated.1-3-1  |
 | Dell r630    |  NIC.Slot.2-1-1        |
 | Dell r930    |  NIC.Integrated.1-3-1  |
@@ -862,8 +862,8 @@ The `--blade` override produces a blade only key (`director_001_r620` in the exa
 Please refer to our contributing [guide](CONTRIBUTING.md).
 
 * Here is some useful documentation
-  - [Creating a pull request](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request)
-  - [Keeping a cloned fork up to date](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/syncing-a-fork)
+  - [Creating a pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)
+  - [Keeping a cloned fork up to date](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/syncing-a-fork)
 
 ## Contact
 
