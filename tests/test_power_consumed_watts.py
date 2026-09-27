@@ -5,9 +5,16 @@ from tests.config import (
     NO_POWER,
     NVIDIA_POWER_RESP,
     POWER_CONSUMED_RESP,
+    POWER_MISSING,
+    POWER_SUBSYSTEM_NO_SUPPLIES,
+    POWER_SUBSYSTEM_RESP,
+    POWER_SUPPLIES_RESP,
+    PSU_METRICS_1_RESP,
+    PSU_METRICS_2_RESP,
     RESPONSE_NO_POWER_CONSUMED,
     RESPONSE_POWER_CONSUMED_OK,
     RESPONSE_POWER_CONSUMED_VAL_ERR,
+    RESPONSE_POWER_SUBSYSTEM_OK,
     RESPONSE_VENDOR_UNSUPPORTED,
 )
 from tests.test_base import TestBase
@@ -48,7 +55,7 @@ class TestPowerConsumed(TestBase):
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.ClientSession.get")
     def test_no_power(self, mock_get, mock_post, mock_delete):
-        responses = INIT_RESP + [NO_POWER]
+        responses = INIT_RESP + [NO_POWER, POWER_SUBSYSTEM_NO_SUPPLIES]
         self.set_mock_response(mock_get, 200, responses)
         self.set_mock_response(mock_post, 200, "OK", True)
         self.set_mock_response(mock_delete, 200, "OK")
@@ -63,12 +70,57 @@ class TestPowerConsumed(TestBase):
         # so the DMTF field is absent. This used to raise an unhandled KeyError
         # (issue #395). It must degrade to the same "not exposed" message as an
         # empty PowerControl array.
-        responses = INIT_RESP + [NVIDIA_POWER_RESP]
+        responses = INIT_RESP + [NVIDIA_POWER_RESP, POWER_SUBSYSTEM_NO_SUPPLIES]
         self.set_mock_response(mock_get, 200, responses)
         self.set_mock_response(mock_post, 200, "OK", True)
         self.set_mock_response(mock_delete, 200, "OK")
         _, err = self.badfish_call()
         assert err == RESPONSE_NO_POWER_CONSUMED
+
+    @patch("aiohttp.ClientSession.delete")
+    @patch("aiohttp.ClientSession.post")
+    @patch("aiohttp.ClientSession.get")
+    def test_power_consumed_subsystem_fallback_missing_field(self, mock_get, mock_post, mock_delete):
+        # A host whose PowerControl entry lacks PowerConsumedWatts but exposes
+        # PowerSubsystem should report the sum of PSU input power instead of N/A.
+        responses = INIT_RESP + [
+            NVIDIA_POWER_RESP,
+            POWER_SUBSYSTEM_RESP,
+            POWER_SUPPLIES_RESP,
+            PSU_METRICS_1_RESP,
+            PSU_METRICS_2_RESP,
+        ]
+        self.set_mock_response(mock_get, 200, responses)
+        self.set_mock_response(mock_post, 200, "OK", True)
+        self.set_mock_response(mock_delete, 200, "OK")
+        _, err = self.badfish_call()
+        assert err == RESPONSE_POWER_SUBSYSTEM_OK
+
+    @patch("aiohttp.ClientSession.delete")
+    @patch("aiohttp.ClientSession.post")
+    @patch("aiohttp.ClientSession.get")
+    def test_power_consumed_subsystem_fallback_on_404(self, mock_get, mock_post, mock_delete):
+        # Hosts that removed the deprecated /Power endpoint but expose
+        # PowerSubsystem should still report consumption.
+        from tests.test_base import MockResponse
+
+        from badfish.main import Badfish
+
+        responses = INIT_RESP + [POWER_SUBSYSTEM_RESP, POWER_SUPPLIES_RESP, PSU_METRICS_1_RESP, PSU_METRICS_2_RESP]
+        self.set_mock_response(mock_get, 200, responses)
+        self.set_mock_response(mock_post, 200, "OK", True)
+        self.set_mock_response(mock_delete, 200, "OK")
+
+        real_get_request = Badfish.get_request
+
+        async def _get(request_self, uri, _continue=False, _get_token=False):
+            if uri.endswith("/Power"):
+                return MockResponse(POWER_MISSING, 404)
+            return await real_get_request(request_self, uri, _continue, _get_token)
+
+        with patch("badfish.main.Badfish.get_request", new=_get):
+            _, err = self.badfish_call()
+        assert err == RESPONSE_POWER_SUBSYSTEM_OK
 
     @patch("aiohttp.ClientSession.delete")
     @patch("aiohttp.ClientSession.post")
