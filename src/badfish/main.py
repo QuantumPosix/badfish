@@ -800,7 +800,7 @@ class Badfish:
                 break
         if cwc is None:
             if supported:
-                self.logger.info("Current watts consumed: N/A. Try to `--racreset`.")
+                self.logger.info("Current watts consumed: N/A. Power consumption not exposed by this host.")
                 return
             self.logger.error("Operation not supported by vendor.")
             return False

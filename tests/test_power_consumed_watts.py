@@ -9,8 +9,11 @@ from tests.config import (
     POWER_SUBSYSTEM_NO_SUPPLIES,
     POWER_SUBSYSTEM_RESP,
     POWER_SUPPLIES_RESP,
+    POWER_SUPPLIES_RESP_EMPTY,
+    POWER_SUPPLIES_RESP_NO_ODATA_ID,
     PSU_METRICS_1_RESP,
     PSU_METRICS_2_RESP,
+    PSU_METRICS_NO_INPUT_RESP,
     RESPONSE_NO_POWER_CONSUMED,
     RESPONSE_POWER_CONSUMED_OK,
     RESPONSE_POWER_CONSUMED_VAL_ERR,
@@ -133,3 +136,124 @@ class TestPowerConsumed(TestBase):
         self.set_mock_response(mock_delete, 200, "OK")
         _, err = self.badfish_call()
         assert err == RESPONSE_POWER_CONSUMED_VAL_ERR
+
+    def _route_subsystem(self, mock_get, mock_post, mock_delete, post_responses, route):
+        """Run --get-power-consumed with a get_request URI router.
+
+        `route(uri)` returns a (text, status) pair for URIs it handles,
+        otherwise defers to the mocked ClientSession.get response queue set
+        in `post_responses`.
+        """
+        from tests.test_base import MockResponse
+
+        from badfish.main import Badfish
+
+        real_get_request = Badfish.get_request
+
+        async def _get(request_self, uri, _continue=False, _get_token=False):
+            handled = route(uri)
+            if handled is not None:
+                text, status = handled
+                return MockResponse(text, status)
+            return await real_get_request(request_self, uri, _continue, _get_token)
+
+        with patch("badfish.main.Badfish.get_request", new=_get):
+            self.set_mock_response(mock_get, 200, post_responses)
+            self.set_mock_response(mock_post, 200, "OK", True)
+            self.set_mock_response(mock_delete, 200, "OK")
+            return self.badfish_call()
+
+    @patch("aiohttp.ClientSession.delete")
+    @patch("aiohttp.ClientSession.post")
+    @patch("aiohttp.ClientSession.get")
+    def test_power_consumed_subsystem_supplies_404(self, mock_get, mock_post, mock_delete):
+        # The PowerSubsystem endpoint is present but the PowerSupplies
+        # collection cannot be read (non-200). Degrade to N/A, not an error.
+        def route(uri):
+            # classic /Power -> not found; PowerSupplies -> server error
+            if uri.endswith("/Power"):
+                return (POWER_MISSING, 404)
+            if "/PowerSupplies" in uri and "/Metrics" not in uri:
+                return ("{\"error\": \"Server Error\"}", 500)
+            return None
+
+        post = INIT_RESP + [POWER_SUBSYSTEM_RESP]
+        _, err = self._route_subsystem(mock_get, mock_post, mock_delete, post, route)
+        assert err == RESPONSE_NO_POWER_CONSUMED
+
+    @patch("aiohttp.ClientSession.delete")
+    @patch("aiohttp.ClientSession.post")
+    @patch("aiohttp.ClientSession.get")
+    def test_power_consumed_subsystem_member_no_odata_id(self, mock_get, mock_post, mock_delete):
+        # A PowerSupplies member without @odata.id is skipped rather than
+        # raising, so a partially-populated collection still yields a value.
+        def route(uri):
+            if uri.endswith("/Power"):
+                return (POWER_MISSING, 404)
+            return None
+
+        post = INIT_RESP + [
+            POWER_SUBSYSTEM_RESP,
+            POWER_SUPPLIES_RESP_NO_ODATA_ID,
+            PSU_METRICS_1_RESP,
+            PSU_METRICS_2_RESP,
+        ]
+        _, err = self._route_subsystem(mock_get, mock_post, mock_delete, post, route)
+        # Both members lack a usable @odata.id (one is empty, one absent), so
+        # neither PSU is consulted and the function degrades to N/A.
+        assert err == RESPONSE_NO_POWER_CONSUMED
+
+    @patch("aiohttp.ClientSession.delete")
+    @patch("aiohttp.ClientSession.post")
+    @patch("aiohttp.ClientSession.get")
+    def test_power_consumed_subsystem_metrics_404(self, mock_get, mock_post, mock_delete):
+        # A PSU whose Metrics endpoint cannot be read is skipped; the other
+        # PSU still contributes, so the total is the healthy PSU's input power.
+        def route(uri):
+            if uri.endswith("/Power"):
+                return (POWER_MISSING, 404)
+            if "/Metrics" in uri:
+                return ("{\"error\": \"Not Found\"}", 404)
+            return None
+
+        post = INIT_RESP + [POWER_SUBSYSTEM_RESP, POWER_SUPPLIES_RESP]
+        _, err = self._route_subsystem(mock_get, mock_post, mock_delete, post, route)
+        # Only PSU.Slot.1 returns a 200 metrics body; PSU.Slot.2 is skipped.
+        assert err == RESPONSE_NO_POWER_CONSUMED
+
+    @patch("aiohttp.ClientSession.delete")
+    @patch("aiohttp.ClientSession.post")
+    @patch("aiohttp.ClientSession.get")
+    def test_power_consumed_subsystem_missing_input_power(self, mock_get, mock_post, mock_delete):
+        # A PSU metrics body without InputPowerWatts (e.g. a chassis that only
+        # reports output) is skipped rather than raising KeyError.
+        def route(uri):
+            if uri.endswith("/Power"):
+                return (POWER_MISSING, 404)
+            return None
+
+        post = INIT_RESP + [
+            POWER_SUBSYSTEM_RESP,
+            POWER_SUPPLIES_RESP,
+            PSU_METRICS_NO_INPUT_RESP,
+            PSU_METRICS_2_RESP,
+        ]
+        _, err = self._route_subsystem(mock_get, mock_post, mock_delete, post, route)
+        # PSU.Slot.1's metrics lack InputPowerWatts and are skipped; only
+        # PSU.Slot.2's 238.25 contributes, so we report 238, not an error.
+        assert err == "- INFO     - Current watts consumed: 238\n"
+
+    @patch("aiohttp.ClientSession.delete")
+    @patch("aiohttp.ClientSession.post")
+    @patch("aiohttp.ClientSession.get")
+    def test_power_consumed_subsystem_empty_supplies(self, mock_get, mock_post, mock_delete):
+        # A PowerSupplies collection with no members yields no total and
+        # degrades to N/A rather than crashing.
+        def route(uri):
+            if uri.endswith("/Power"):
+                return (POWER_MISSING, 404)
+            return None
+
+        post = INIT_RESP + [POWER_SUBSYSTEM_RESP, POWER_SUPPLIES_RESP_EMPTY]
+        _, err = self._route_subsystem(mock_get, mock_post, mock_delete, post, route)
+        assert err == RESPONSE_NO_POWER_CONSUMED
