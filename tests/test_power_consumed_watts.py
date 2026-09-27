@@ -174,7 +174,7 @@ class TestPowerConsumed(TestBase):
             if uri.endswith("/Power"):
                 return (POWER_MISSING, 404)
             if "/PowerSupplies" in uri and "/Metrics" not in uri:
-                return ("{\"error\": \"Server Error\"}", 500)
+                return ('{"error": "Server Error"}', 500)
             return None
 
         post = INIT_RESP + [POWER_SUBSYSTEM_RESP]
@@ -185,8 +185,8 @@ class TestPowerConsumed(TestBase):
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.ClientSession.get")
     def test_power_consumed_subsystem_member_no_odata_id(self, mock_get, mock_post, mock_delete):
-        # A PowerSupplies member without @odata.id is skipped rather than
-        # raising, so a partially-populated collection still yields a value.
+        # A PowerSupplies member without a usable @odata.id is skipped rather
+        # than raising; here both members are skipped, so no PSU is consulted.
         def route(uri):
             if uri.endswith("/Power"):
                 return (POWER_MISSING, 404)
@@ -213,12 +213,12 @@ class TestPowerConsumed(TestBase):
             if uri.endswith("/Power"):
                 return (POWER_MISSING, 404)
             if "/Metrics" in uri:
-                return ("{\"error\": \"Not Found\"}", 404)
+                return ('{"error": "Not Found"}', 404)
             return None
 
         post = INIT_RESP + [POWER_SUBSYSTEM_RESP, POWER_SUPPLIES_RESP]
         _, err = self._route_subsystem(mock_get, mock_post, mock_delete, post, route)
-        # Only PSU.Slot.1 returns a 200 metrics body; PSU.Slot.2 is skipped.
+        # Both PSU metrics endpoints return non-200, so both PSUs are skipped.
         assert err == RESPONSE_NO_POWER_CONSUMED
 
     @patch("aiohttp.ClientSession.delete")
