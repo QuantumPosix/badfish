@@ -207,8 +207,8 @@ class TestPowerConsumed(TestBase):
     @patch("aiohttp.ClientSession.post")
     @patch("aiohttp.ClientSession.get")
     def test_power_consumed_subsystem_metrics_404(self, mock_get, mock_post, mock_delete):
-        # A PSU whose Metrics endpoint cannot be read is skipped; the other
-        # PSU still contributes, so the total is the healthy PSU's input power.
+        # All PSU metrics endpoints return non-200, so every PSU is skipped and
+        # the reader degrades to N/A rather than crashing.
         def route(uri):
             if uri.endswith("/Power"):
                 return (POWER_MISSING, 404)
